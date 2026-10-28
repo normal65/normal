@@ -1,0 +1,17 @@
+﻿--- a/src/NimBLEDevice.cpp
++++ b/src/NimBLEDevice.cpp
+@@ -976,7 +976,14 @@ bool NimBLEDevice::init(const std::string& deviceName) {
+ #   endif
+ #  endif
+ # endif
+-        nimble_port_init();
++        // ESP-IDF: nimble_port_init 失败时（如 hci inits failed）必须立刻返回，
++        // 否则仍会启动 host_task，在空 eventq 上 LoadProhibited 崩溃。
++        err = nimble_port_init();
++        if (err != ESP_OK) {
++            NIMBLE_LOGE(LOG_TAG, "nimble_port_init() failed; err=%d", err);
++            return false;
++        }
+ 
+         // Setup callbacks for host events
+         ble_hs_cfg.reset_cb        = NimBLEDevice::onReset;

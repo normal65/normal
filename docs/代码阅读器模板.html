@@ -1,0 +1,1851 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ebook 项目代码详解</title>
+<style>
+:root {
+  --sidebar-bg: #f7f4ed;
+  --page-bg: #fffdf9;
+  --text: #23282d;
+  --muted: #6f746f;
+  --border: #ddd6c9;
+  --accent: #0f766e;
+  --accent-soft: #dff3ef;
+  --code-bg: #f1efe8;
+  --sidebar-width: 340px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--text);
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+  line-height: 1.75;
+}
+
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 30;
+  display: flex;
+  width: var(--sidebar-width);
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: var(--sidebar-bg);
+  transition: transform 180ms ease;
+}
+
+.sidebar-header {
+  padding: 20px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-header h1 {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.35;
+}
+
+.sidebar-header p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.search-wrap {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+#tocSearch {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fffefa;
+  color: var(--text);
+  font: inherit;
+  outline: none;
+}
+
+#tocSearch:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.term-search-wrap {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  background: #f2eee4;
+}
+
+.term-search-wrap label {
+  display: block;
+  margin-bottom: 6px;
+  color: #4d554f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+#termSearch {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fffefa;
+  color: var(--text);
+  font: inherit;
+  outline: none;
+}
+
+#termSearch:focus {
+  border-color: #d49b32;
+  box-shadow: 0 0 0 3px #fff0cf;
+}
+
+.term-results {
+  max-height: 250px;
+  margin-top: 8px;
+  overflow: auto;
+}
+
+.term-result {
+  display: block;
+  width: 100%;
+  margin: 4px 0;
+  padding: 8px 9px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: #fffdf8;
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.term-result:hover,
+.term-result:focus {
+  border-color: #d9b96d;
+  background: #fff4d7;
+}
+
+.term-result strong {
+  display: block;
+  color: #7a4f0d;
+  font-size: 13px;
+}
+
+.term-result span {
+  display: block;
+  margin-top: 2px;
+  color: #626861;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.term-empty {
+  padding: 5px 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.toc-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 10px 28px;
+}
+
+#TOC {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+#TOC ul {
+  margin: 0;
+  padding-left: 10px;
+  list-style: none;
+}
+
+#TOC > ul {
+  padding-left: 0;
+}
+
+#TOC li {
+  margin: 2px 0;
+}
+
+#TOC a {
+  display: block;
+  padding: 5px 8px;
+  border-radius: 5px;
+  color: #343a40;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+#TOC a:hover {
+  background: #ebe7dc;
+  color: #111;
+}
+
+#TOC a.active {
+  background: var(--accent-soft);
+  color: #075e56;
+  font-weight: 700;
+}
+
+.function-hint {
+  margin-top: 7px;
+  color: #0f766e;
+  font-size: 12px;
+}
+
+.content {
+  min-height: 100vh;
+  margin-left: var(--sidebar-width);
+  padding: 36px 52px 80px;
+}
+
+.content article {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.content h1,
+.content h2,
+.content h3,
+.content h4,
+.content h5,
+.content h6 {
+  line-height: 1.35;
+  scroll-margin-top: 18px;
+}
+
+.content h1 {
+  margin: 0 0 28px;
+  font-size: 34px;
+}
+
+.content h2 {
+  margin: 48px 0 18px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--border);
+  font-size: 28px;
+}
+
+.content h3 {
+  margin: 36px 0 14px;
+  color: #145b55;
+  font-size: 23px;
+}
+
+.content h4 {
+  margin: 28px 0 10px;
+  padding-left: 10px;
+  border-left: 4px solid var(--accent);
+  font-size: 19px;
+}
+
+.content h5 {
+  margin: 24px 0 8px;
+  font-size: 17px;
+}
+
+.content h6 {
+  margin: 20px 0 8px;
+  color: #444;
+  font-size: 15px;
+}
+
+.content p {
+  margin: 12px 0;
+}
+
+.content a {
+  color: #096e65;
+}
+
+.content code {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: var(--code-bg);
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 0.92em;
+}
+
+.content pre {
+  overflow-x: auto;
+  padding: 15px 17px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #f4f2eb;
+  line-height: 1.55;
+}
+
+.content pre code {
+  padding: 0;
+  background: transparent;
+}
+
+.content blockquote {
+  margin: 18px 0;
+  padding: 4px 16px;
+  border-left: 4px solid #d49b32;
+  background: #fff7e7;
+  color: #53462f;
+}
+
+.content table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.content th,
+.content td {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.content th {
+  background: #efebe1;
+}
+
+.content img {
+  max-width: 100%;
+  height: auto;
+}
+
+.content .fn-ref {
+  padding: 0 2px;
+  border-radius: 3px;
+  color: #0b6e64;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.content .fn-ref:hover,
+.content .fn-ref:focus {
+  background: var(--accent-soft);
+  text-decoration-style: solid;
+}
+
+.content .fn-ref-choice {
+  cursor: help;
+}
+
+.content .jump-ref {
+  padding: 0 2px;
+  border-radius: 3px;
+  color: #9a5b00;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.content .jump-ref:hover,
+.content .jump-ref:focus {
+  background: #ffedc2;
+  text-decoration-style: solid;
+}
+
+.content .return-ref {
+  display: inline;
+  margin: 0;
+  padding: 0 2px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: #a33a2b;
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.content .return-ref:hover,
+.content .return-ref:focus {
+  background: #ffe0d9;
+  text-decoration-style: solid;
+}
+
+.source-manifest {
+  margin: 14px 0 24px;
+  padding: 12px 14px;
+  border: 1px solid #e2d5b9;
+  border-left: 4px solid #d49b32;
+  border-radius: 6px;
+  background: #fff9ed;
+}
+
+.source-manifest h4 {
+  margin: 0 0 6px;
+  padding: 0;
+  border: 0;
+  color: #6d4b16;
+  font-size: 15px;
+}
+
+.source-manifest p {
+  margin: 4px 0 8px;
+  color: #6f5a36;
+  font-size: 13px;
+}
+
+.source-manifest ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.source-manifest li {
+  margin: 3px 0;
+}
+
+.source-manifest code {
+  background: #f5ead3;
+  color: #5b4219;
+}
+
+.content pre .fn-ref {
+  color: #075e56;
+}
+
+.jump-status {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 40;
+}
+
+.jump-status[hidden] {
+  display: none;
+}
+
+#fnBackButton {
+  padding: 9px 13px;
+  border: 1px solid #b9d8d2;
+  border-radius: 6px;
+  background: #f1fbf8;
+  color: #075e56;
+  font: inherit;
+  cursor: pointer;
+  box-shadow: 0 5px 16px rgba(15, 118, 110, 0.12);
+}
+
+#fnBackButton:hover {
+  background: var(--accent-soft);
+}
+
+.fn-chooser {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(24, 28, 27, 0.42);
+}
+
+.fn-chooser[hidden] {
+  display: none;
+}
+
+.fn-chooser-panel {
+  width: min(680px, 100%);
+  max-height: min(70vh, 640px);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fffdf9;
+  box-shadow: 0 20px 50px rgba(20, 28, 26, 0.25);
+}
+
+.fn-chooser-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.fn-chooser-head h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+}
+
+#fnChooserClose {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: #f7f4ed;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.fn-chooser-list {
+  max-height: calc(70vh - 64px);
+  overflow: auto;
+  padding: 8px;
+}
+
+.fn-choice-item {
+  display: block;
+  width: 100%;
+  margin: 4px 0;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: #faf8f2;
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.fn-choice-item:hover,
+.fn-choice-item:focus {
+  border-color: #9fcfc7;
+  background: var(--accent-soft);
+}
+
+.menu-toggle {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 50;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fffdf9;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    transform: translateX(-100%);
+    box-shadow: 8px 0 24px rgba(35, 40, 45, 0.15);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .content {
+    margin-left: 0;
+    padding: 70px 18px 60px;
+  }
+
+  .menu-toggle {
+    display: block;
+  }
+
+  .content h1 {
+    font-size: 28px;
+  }
+
+  .content h2 {
+    font-size: 24px;
+  }
+
+  .content h3 {
+    font-size: 21px;
+  }
+
+  .function-hint {
+    font-size: 12px;
+  }
+
+  .jump-status {
+    right: 12px;
+    bottom: 12px;
+  }
+}
+</style>
+</head>
+<body>
+<button class="menu-toggle" id="menuToggle" type="button">目录</button>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h1>Ebook 项目代码详解</h1>
+    <p>点击左侧条目，右侧阅读对应模块或函数。</p>
+    <p class="function-hint" id="functionHint">正文中的函数名也可以点击跳转。</p>
+  </div>
+  <div class="search-wrap">
+    <input id="tocSearch" type="search" placeholder="搜索模块、函数或关键字">
+  </div>
+  <div class="term-search-wrap">
+    <label for="termSearch">术语/函数解释</label>
+    <input id="termSearch" type="search" placeholder="例如 UiBus、Router、Presenter">
+    <div class="term-results" id="termResults"></div>
+  </div>
+  <div class="toc-scroll">
+    <nav id="TOC" role="doc-toc">
+$table-of-contents$
+    </nav>
+  </div>
+</aside>
+<main class="content">
+  <article>
+$body$
+  </article>
+</main>
+<div class="jump-status" id="jumpStatus" hidden>
+  <button id="fnBackButton" type="button">← 返回上一个位置</button>
+</div>
+<div class="fn-chooser" id="fnChooser" hidden>
+  <div class="fn-chooser-panel" role="dialog" aria-modal="true" aria-labelledby="fnChooserTitle">
+    <div class="fn-chooser-head">
+      <h3 id="fnChooserTitle">选择要阅读的函数</h3>
+      <button id="fnChooserClose" type="button">关闭</button>
+    </div>
+    <div class="fn-chooser-list" id="fnChooserList"></div>
+  </div>
+</div>
+<script>
+(function () {
+  const sidebar = document.getElementById("sidebar");
+  const toggle = document.getElementById("menuToggle");
+  const search = document.getElementById("tocSearch");
+  const termSearch = document.getElementById("termSearch");
+  const termResults = document.getElementById("termResults");
+  const functionHint = document.getElementById("functionHint");
+  const jumpStatus = document.getElementById("jumpStatus");
+  const fnBackButton = document.getElementById("fnBackButton");
+  const fnChooser = document.getElementById("fnChooser");
+  const fnChooserList = document.getElementById("fnChooserList");
+  const fnChooserClose = document.getElementById("fnChooserClose");
+  const links = Array.from(document.querySelectorAll("#TOC a[href^='#']"));
+  const linkById = new Map();
+  const article = document.querySelector("article");
+  const jumpStack = [];
+  const sourceGroups = {
+    "7": [
+      "main/bsp/driver/gdey027t91/gdey027t91.cc",
+      "main/bsp/driver/gdey027t91/gdey027t91.hpp",
+      "main/bsp/driver/gdey027t91/backlight.cc",
+      "main/bsp/driver/gdey027t91/backlight.hpp",
+      "main/app/ebook/display/display_port.cc",
+      "main/app/ebook/display/display_port.hpp",
+      "main/app/ebook/presenter/presenter.cc",
+      "main/app/ebook/presenter/present_plan.cc"
+    ],
+    "8": [
+      "main/bsp/driver/ft6336u/ft6336u.cc",
+      "main/bsp/driver/ft6336u/ft6336u.hpp",
+      "main/bsp/driver/ft6336u/touch_gesture.cc",
+      "main/bsp/driver/ft6336u/touch_gesture.hpp",
+      "main/app/ebook/input/input_router.cc",
+      "main/app/ebook/input/input_dispatch.cc",
+      "main/app/ebook/input/input_bindings.cc",
+      "main/app/ebook/input/key_bindings.cc",
+      "main/app/ebook/input/physical_input.cc",
+      "main/app/ebook/input/physical_types.cc",
+      "main/bsp/driver/button/button.cc",
+      "main/bsp/i2c/i2c.cc"
+    ],
+    "9": [
+      "main/app/ebook/ui/ui_bus.cc",
+      "main/app/ebook/ui/ui_bus.hpp",
+      "main/app/ebook/ui/ui_loop.cc",
+      "main/app/ebook/ui/ui_event.hpp",
+      "main/app/ebook/ui/list_view.cc",
+      "main/app/ebook/ui/widgets.cc",
+      "main/app/ebook/ui/dialog.cc",
+      "main/app/ebook/composer/composer.cc",
+      "main/app/ebook/gfx/canvas.cc",
+      "main/app/ebook/gfx/font.cc",
+      "main/app/ebook/gfx/text_layout.cc"
+    ],
+    "10": [
+      "main/app/ebook/data/persist.cc",
+      "main/app/ebook/data/persist.hpp",
+      "main/app/ebook/data/system_state.cc",
+      "main/app/ebook/data/system_state.hpp",
+      "main/app/ebook/data/clock_provider.cc",
+      "main/common/time/time.cc",
+      "main/common/time/time.hpp"
+    ],
+    "11": [
+      "main/common/storage/storage.cc",
+      "main/common/storage/storage.hpp",
+      "main/common/storage/storage_usb_msc.cc",
+      "main/common/file/file.cc",
+      "main/common/file/file.hpp"
+    ],
+    "12": [
+      "main/common/memory/memory.cc",
+      "main/common/memory/memory.hpp",
+      "main/common/memory/psram_alloc.hpp",
+      "main/common/memory/double_buffer/double_buffer.hpp",
+      "main/common/memory/ring_buffer/ring_buffer.hpp",
+      "main/common/file/file.cc"
+    ],
+    "13.1": [
+      "main/app/ebook/apps/reader/reader_app.cc",
+      "main/app/ebook/apps/reader/reader_app.hpp",
+      "main/app/ebook/apps/reader/book_shelf.cc",
+      "main/app/ebook/apps/reader/txt_book.cc",
+      "main/app/ebook/apps/reader/reading_store.cc",
+      "main/app/ebook/apps/reader/txt_index_cache.cc",
+      "main/app/ebook/apps/reader/reader_menu.cc"
+    ],
+    "13.2": [
+      "main/app/ebook/apps/notepad/notepad_app.cc",
+      "main/app/ebook/apps/notepad/notepad_app.hpp"
+    ],
+    "13.3": [
+      "main/app/ebook/apps/gallery/gallery_app.cc",
+      "main/app/ebook/apps/gallery/gallery_app.hpp"
+    ],
+    "13.4": [
+      "main/app/ebook/apps/drawing/drawing_app.cc",
+      "main/app/ebook/apps/drawing/drawing_app.hpp"
+    ],
+    "13.5": [
+      "main/app/ebook/apps/wooden_fish/wooden_fish_app.cc",
+      "main/app/ebook/apps/wooden_fish/wooden_fish_app.hpp",
+      "main/app/ebook/platform/wooden_fish_sound.cc"
+    ],
+    "13.6": [
+      "main/app/ebook/apps/music/music_app.cc",
+      "main/app/ebook/apps/music/music_library.cc",
+      "main/app/ebook/apps/music/music_store.cc",
+      "main/app/ebook/platform/music_player.cc"
+    ],
+    "13.7": [
+      "main/app/ebook/apps/weather/weather_app.cc",
+      "main/app/ebook/apps/weather/weather_cities.cc"
+    ],
+    "13.8": [
+      "main/app/ebook/apps/clock/clock_app.cc",
+      "main/app/ebook/apps/clock/clock_store.cc"
+    ],
+    "13.9": [
+      "main/app/ebook/apps/calendar/calendar_app.cc",
+      "main/app/ebook/apps/calendar/calendar_app.hpp"
+    ],
+    "13.10": [
+      "main/app/ebook/apps/files/files_app.cc",
+      "main/app/ebook/apps/files/vfs_browser.cc"
+    ],
+    "13.11": [
+      "main/common/ota/ota.cc",
+      "main/common/ota/ota.hpp",
+      "main/app/ebook/apps/stub_app.cc"
+    ],
+    "13.12": [
+      "main/app/ebook/apps/settings/settings_app.cc",
+      "main/app/ebook/apps/settings/settings_common.cc",
+      "main/app/ebook/apps/settings/settings_wifi.cc",
+      "main/app/ebook/apps/settings/settings_bluetooth.cc",
+      "main/app/ebook/apps/settings/settings_hotspot.cc",
+      "main/app/ebook/apps/settings/settings_display.cc",
+      "main/app/ebook/apps/settings/settings_key_bindings.cc",
+      "main/app/ebook/apps/settings/settings_sound.cc",
+      "main/app/ebook/apps/settings/settings_time.cc",
+      "main/app/ebook/apps/settings/settings_storage.cc",
+      "main/app/ebook/apps/settings/settings_security.cc",
+      "main/app/ebook/apps/settings/settings_about.cc"
+    ],
+    "14.1": [
+      "main/app/network/wifi/wifi.cc",
+      "main/app/network/wifi/wifi.hpp"
+    ],
+    "14.2": [
+      "main/app/network/bluetooth/bluetooth.cc",
+      "main/app/network/bluetooth/gatt/gatt.cc"
+    ],
+    "14.3": [
+      "main/app/protocol/http/http.cc",
+      "main/app/protocol/http/http.hpp"
+    ],
+    "14.4": [
+      "main/app/protocol/ntp/ntp.cc",
+      "main/app/protocol/ntp/ntp.hpp"
+    ],
+    "14.5": [
+      "main/app/protocol/websocket/websocket.cc",
+      "main/app/protocol/websocket/websocket.hpp"
+    ],
+    "14.6": [
+      "main/app/protocol/file_server/file_server.cc",
+      "main/app/protocol/file_server/file_server.hpp"
+    ],
+    "15": [
+      "main/common/ota/ota.cc",
+      "main/common/ota/ota.hpp"
+    ],
+    "16": [
+      "main/common/time/time.cc",
+      "main/app/system/task/task.cc",
+      "main/app/system/event/event.cc",
+      "main/app/system/power/power.cc",
+      "main/app/system/info/info.cc"
+    ],
+    "30.1": [
+      "main/bsp/driver/qmi8658a/qmi8658a.cc",
+      "main/bsp/driver/qmi8658a/qmi8658a.hpp"
+    ],
+    "30.2": [
+      "main/bsp/driver/button/button.cc",
+      "main/bsp/driver/button/button.hpp",
+      "main/bsp/config/config.hpp"
+    ],
+    "30.3": [
+      "main/bsp/battery/battery.cc",
+      "main/bsp/battery/battery.hpp",
+      "main/app/ebook/platform/battery_sampler.cc",
+      "main/app/ebook/platform/battery_sampler.hpp"
+    ],
+    "30.4": [
+      "main/bsp/driver/audio/es8311/es8311_codec.cc",
+      "main/bsp/driver/audio/es8311/es8311_codec.hpp",
+      "main/app/ebook/platform/audio_codec.cc"
+    ],
+    "30.5": [
+      "main/app/ebook/platform/music_player.cc",
+      "main/app/ebook/platform/music_player.hpp",
+      "main/app/ebook/apps/music/music_library.cc",
+      "main/app/ebook/apps/music/music_store.cc"
+    ],
+    "30.6": [
+      "main/app/ebook/platform/wooden_fish_sound.cc",
+      "main/app/ebook/platform/wooden_fish_sound.hpp"
+    ],
+    "30.7": [
+      "main/app/ebook/platform/housekeeper.cc",
+      "main/app/ebook/platform/housekeeper.hpp"
+    ],
+    "30.8": [
+      "main/app/ebook/ime/ime_engine.cc",
+      "main/app/ebook/ime/ime_engine.hpp",
+      "main/third_party/zh_pinyin/zh_pinyin_decoder.c",
+      "main/third_party/zh_pinyin/zh_hash_boost.c",
+      "main/third_party/zh_pinyin/zh_code_table.c"
+    ],
+    "30.9": [
+      "main/app/ebook/text/path_encoding.cc",
+      "main/app/ebook/text/path_encoding.hpp"
+    ],
+    "30.10": [
+      "main/app/ebook/gfx/font.cc",
+      "main/app/ebook/gfx/font.hpp",
+      "main/app/ebook/gfx/bitmap_font.cc",
+      "main/app/ebook/gfx/bitmap_font.hpp",
+      "main/app/ebook/gfx/text_layout.cc"
+    ],
+    "30.11": [
+      "main/common/uuid/uuid.cc",
+      "main/common/uuid/uuid.hpp"
+    ],
+    "30.12": [
+      "main/CMakeLists.txt",
+      "CMakeLists.txt"
+    ],
+    "30.13": [
+      "main/test/basic.cc",
+      "main/test/audio/test_audio.cc",
+      "main/test/button/test_button.cc",
+      "main/test/wifi/test_wifi.cc",
+      "main/test/storage/test_storage.cc",
+      "main/test/qmi8658a/test_qmi8658a.cc"
+    ],
+    "30.14": [
+      "main/app/ebook/apps/stub_app.cc",
+      "main/app/ebook/apps/stub_app.hpp"
+    ],
+    "30.15": [
+      "main/app/ebook/platform/boot.cc",
+      "main/app/ebook/ebook_app.cc"
+    ],
+    "30.16": [
+      "main/main.cc",
+      "main/app/ebook/ebook_app.cc"
+    ],
+    "31.1": [
+      "main/main.cc",
+      "main/app/ebook/ebook_app.cc",
+      "main/app/ebook/platform/boot.cc",
+      "main/app/ebook/data/persist.cc",
+      "main/app/ebook/display/display_port.cc",
+      "main/bsp/driver/ft6336u/ft6336u.cc",
+      "main/app/ebook/platform/audio_codec.cc"
+    ],
+    "31.2": [
+      "main/app/ebook/ui/ui_event.hpp",
+      "main/app/ebook/ui/ui_bus.cc",
+      "main/app/ebook/ui/ui_bus.hpp",
+      "main/app/ebook/ui/ui_loop.cc",
+      "main/app/ebook/ui/ui_loop.hpp"
+    ],
+    "31.3": [
+      "main/bsp/driver/ft6336u/ft6336u.cc",
+      "main/bsp/driver/ft6336u/touch_gesture.cc",
+      "main/app/ebook/input/input_router.cc",
+      "main/app/ebook/input/physical_input.cc",
+      "main/app/ebook/input/input_dispatch.cc",
+      "main/app/ebook/input/key_bindings.cc",
+      "main/app/ebook/input/input_bindings.cc"
+    ],
+    "31.4": [
+      "main/app/ebook/router/route_stack.cc",
+      "main/app/ebook/router/router.cc",
+      "main/app/ebook/router/refresh_edges.cc",
+      "main/app/ebook/router/refresh_intent.cc",
+      "main/app/ebook/presenter/presenter.cc",
+      "main/app/ebook/presenter/present_plan.cc",
+      "main/app/ebook/composer/composer.cc",
+      "main/app/ebook/display/display_port.cc"
+    ],
+    "31.5": [
+      "main/bsp/driver/gdey027t91/gdey027t91.cc",
+      "main/bsp/driver/gdey027t91/gdey027t91.hpp",
+      "main/bsp/driver/gdey027t91/backlight.cc",
+      "main/app/ebook/display/display_port.cc",
+      "main/app/ebook/presenter/presenter.cc"
+    ],
+    "31.6": [
+      "main/app/ebook/gfx/canvas.cc",
+      "main/app/ebook/gfx/font.cc",
+      "main/app/ebook/gfx/bitmap_font.cc",
+      "main/app/ebook/gfx/text_layout.cc",
+      "main/app/ebook/ui/widgets.cc",
+      "main/app/ebook/ui/list_view.cc",
+      "main/app/ebook/ui/dialog.cc"
+    ],
+    "31.7": [
+      "main/app/ebook/data/persist.cc",
+      "main/app/ebook/data/system_state.cc",
+      "main/app/ebook/data/clock_provider.cc",
+      "main/common/time/time.cc",
+      "main/common/storage/storage.cc",
+      "main/common/storage/storage_usb_msc.cc",
+      "main/common/file/file.cc"
+    ],
+    "31.8": [
+      "main/app/ebook/apps/app.cc",
+      "main/app/ebook/apps/app_registry.cc",
+      "main/app/ebook/shell/app_host_page.cc",
+      "main/app/ebook/shell/home_page.cc",
+      "main/app/ebook/shell/app_grid_page.cc",
+      "main/app/ebook/shell/lock_page.cc",
+      "main/app/ebook/overlays/status_bar.cc",
+      "main/app/ebook/overlays/control_center.cc",
+      "main/app/ebook/overlays/toast.cc",
+      "main/app/ebook/overlays/keyboard.cc"
+    ],
+    "31.9": [
+      "main/app/system/task/task.cc",
+      "main/app/system/event/event.cc",
+      "main/app/system/power/power.cc",
+      "main/app/system/info/info.cc",
+      "main/app/ebook/platform/housekeeper.cc",
+      "main/common/memory/memory.cc",
+      "main/app/ebook/ui/ui_bus.cc"
+    ],
+    "31.10": [
+      "main/app/ebook/apps/files/files_app.cc",
+      "main/app/ebook/apps/files/vfs_browser.cc",
+      "main/app/ebook/apps/settings/settings_app.cc",
+      "main/app/ebook/apps/settings/settings_common.cc",
+      "main/app/ebook/apps/settings/settings_wifi.cc",
+      "main/app/ebook/apps/settings/settings_bluetooth.cc",
+      "main/app/ebook/apps/settings/settings_hotspot.cc",
+      "main/app/ebook/apps/settings/settings_display.cc",
+      "main/app/ebook/apps/settings/settings_key_bindings.cc",
+      "main/app/ebook/apps/settings/settings_sound.cc",
+      "main/app/ebook/apps/settings/settings_time.cc",
+      "main/app/ebook/apps/settings/settings_storage.cc",
+      "main/app/ebook/apps/settings/settings_security.cc",
+      "main/app/ebook/apps/settings/settings_about.cc",
+      "main/app/ebook/apps/settings/auto_lock.cc",
+      "main/app/ebook/apps/settings/lock_password.cc",
+      "main/app/ebook/apps/settings/power_save.cc",
+      "main/app/ebook/apps/stub_app.cc",
+      "main/common/ota/ota.cc"
+    ],
+    "31.11": [
+      "main/bsp/config/config.hpp",
+      "main/CMakeLists.txt",
+      "main/app/ebook/apps/app_id.hpp",
+      "main/app/ebook/apps/app_registry.cc",
+      "main/app/ebook/input/key_bindings.cc",
+      "main/app/ebook/input/input_dispatch.cc",
+      "main/app/ebook/router/refresh_intent.cc",
+      "main/app/ebook/platform/housekeeper.cc"
+    ]
+  };
+
+  function normalizeSectionNumber(text) {
+    const match = text.trim().match(/^(\d+(?:\.\d+)?)/);
+    return match ? match[1] : "";
+  }
+
+  function insertSourceManifests() {
+    const moduleHeadings = Array.from(article.querySelectorAll("h2[id], h3[id]"));
+    moduleHeadings.forEach(function (heading) {
+      const sectionNumber = normalizeSectionNumber(heading.textContent);
+      const files = sourceGroups[sectionNumber];
+      if (!files || heading.nextElementSibling && heading.nextElementSibling.classList.contains("source-manifest")) {
+        return;
+      }
+
+      const box = document.createElement("div");
+      box.className = "source-manifest";
+
+      const title = document.createElement("h4");
+      title.textContent = "对应源码文件";
+      box.appendChild(title);
+
+      const note = document.createElement("p");
+      note.textContent = "阅读顺序：按下面文件从上到下整理；每个文件内部按函数在源码中出现的先后顺序阅读。";
+      box.appendChild(note);
+
+      const list = document.createElement("ul");
+      files.forEach(function (file) {
+        const item = document.createElement("li");
+        const code = document.createElement("code");
+        code.textContent = file;
+        item.appendChild(code);
+        list.appendChild(item);
+      });
+      box.appendChild(list);
+
+      heading.insertAdjacentElement("afterend", box);
+    });
+  }
+
+  const glossaryTerms = [
+    { term: "UiBus", aliases: "UI 总线 事件队列", desc: "跨任务向 UI 线程投递输入、时钟、电池和系统提示的事件总线。", targets: ["31.2"] },
+    { term: "UiLoop", aliases: "UI 主循环", desc: "唯一负责消费 UiBus 事件并更新页面的 UI 任务。", targets: ["31.2"] },
+    { term: "UiEvent", aliases: "UI 事件", desc: "触摸、物理按键、时钟、电池、Wi-Fi、NTP 等事件统一封装后的数据结构。", targets: ["31.2"] },
+    { term: "Router", aliases: "路由", desc: "管理 Shell、App 和覆盖层之间的跳转、返回和页面栈。", targets: ["31.4", "31.8"] },
+    { term: "RouteStack", aliases: "路由栈", desc: "保存当前页面历史、App 状态和覆盖层级，决定返回时去哪里。", targets: ["31.4"] },
+    { term: "Presenter", aliases: "刷新调度", desc: "接收刷新请求，把 Canvas 合成结果按 Full、Fast、Partial 波形送上墨水屏。", targets: ["31.4", "31.5"] },
+    { term: "Composer", aliases: "页面合成", desc: "按照页面层级依次绘制背景、页面和覆盖层。", targets: ["31.4"] },
+    { term: "RefreshIntent", aliases: "刷新意图", desc: "页面表达希望使用哪种刷新波形，而不是直接控制墨水屏驱动。", targets: ["31.4"] },
+    { term: "Waveform", aliases: "刷新波形", desc: "墨水屏的刷新方式，当前分为 Partial、Fast 和 Full。", targets: ["31.4", "31.5"] },
+    { term: "GDEY027T91", aliases: "墨水屏 屏幕面板", desc: "当前电子墨水屏面板型号；控制器命令由 SSD1680 兼容驱动负责。", targets: ["7", "31.5"] },
+    { term: "SSD1680", aliases: "墨水屏控制器", desc: "墨水屏内部控制器，负责 RAM、Busy、波形和局部刷新命令。", targets: ["7", "31.5"] },
+    { term: "FT6336U", aliases: "触摸芯片 触摸", desc: "通过 I2C 读取触摸坐标和中断状态的电容触摸控制器。", targets: ["8", "31.3"] },
+    { term: "QMI8658A", aliases: "六轴 传感器 IMU", desc: "六轴惯性传感器；自动旋转是否启用要以系统当前配置为准。", targets: ["30.1"] },
+    { term: "ES8311", aliases: "音频 Codec", desc: "音频 Codec 芯片，配合 I2S 完成播放数据到模拟声音的转换。", targets: ["30.4"] },
+    { term: "I2C", aliases: "总线", desc: "两根线的低速设备总线，用于触摸、传感器和部分配置器件。", targets: ["8", "30.1"] },
+    { term: "SPI", aliases: "总线", desc: "高速同步串行总线，墨水屏通过它接收命令和像素数据。", targets: ["7", "31.5"] },
+    { term: "I2S", aliases: "音频总线", desc: "专门传输数字音频采样的同步串行总线。", targets: ["30.4"] },
+    { term: "ADC", aliases: "模拟采样", desc: "把电池电压、拨码电压等模拟量转换成数字值。", targets: ["30.2", "30.3"] },
+    { term: "PWM", aliases: "背光", desc: "通过占空比调节背光亮度等模拟效果。", targets: ["7"] },
+    { term: "SystemState", aliases: "系统状态 全局状态", desc: "运行期共享的亮度、音量、Wi-Fi、蓝牙、热点等状态缓存。", targets: ["31.7"] },
+    { term: "Persist", aliases: "NVS 持久化", desc: "负责从 NVS 读取和保存设置，提供统一的数据访问接口。", targets: ["31.7"] },
+    { term: "NVS", aliases: "非易失存储 配置", desc: "ESP32 的非易失性键值存储，适合保存小配置。", targets: ["31.7", "31.10"] },
+    { term: "VFS", aliases: "虚拟文件系统", desc: "把内部 Flash、SD 卡和只读资源统一成文件路径的抽象层。", targets: ["31.7", "31.10"] },
+    { term: "PSRAM", aliases: "外部内存", desc: "片外扩展内存，适合放大的缓存和任务栈，但中断和 DMA 使用有边界。", targets: ["12", "31.9"] },
+    { term: "SRAM", aliases: "内部内存", desc: "ESP32 片内高速内存，数量有限，Wi-Fi、图形和任务都需要它。", targets: ["12"] },
+    { term: "FreeRTOS", aliases: "任务 调度", desc: "实时操作系统内核，负责任务、队列、互斥锁和延时调度。", targets: ["5", "31.9"] },
+    { term: "Task", aliases: "任务 线程", desc: "项目对 FreeRTOS 任务的封装，负责栈、优先级、启动和销毁。", targets: ["31.9"] },
+    { term: "Housekeeper", aliases: "周期管家", desc: "低频后台任务，负责时钟、电池、自动锁屏和存储热插拔检查。", targets: ["30.7", "31.9"] },
+    { term: "App", aliases: "应用 页面", desc: "所有可打开业务应用的基类，提供生命周期、绘制、输入和刷新接口。", targets: ["31.8"] },
+    { term: "AppId", aliases: "应用编号", desc: "应用的稳定枚举标识，用于注册表、路由和持久化关联。", targets: ["31.8", "31.10"] },
+    { term: "AppRegistry", aliases: "应用注册表", desc: "登记所有 App，决定 Shell 网格顺序，并负责打开和关闭活动 App。", targets: ["31.8", "31.10"] },
+    { term: "Shell", aliases: "外壳 页面", desc: "锁屏、主页、应用网格和应用宿主等最外层页面。", targets: ["31.8"] },
+    { term: "AppHostPage", aliases: "应用宿主", desc: "提供 App 的统一工具栏、返回逻辑和输入兜底。", targets: ["31.8"] },
+    { term: "Canvas", aliases: "画布", desc: "向内存 framebuffer 绘制文字、线条、矩形和图标的基础接口。", targets: ["31.6"] },
+    { term: "Framebuffer", aliases: "帧缓冲 显示内存", desc: "保存一整屏 1-bit 像素的内存区域，是绘制和刷新之间的中间层。", targets: ["7", "31.5"] },
+    { term: "ListView", aliases: "列表控件", desc: "通用列表绘制和滚动控件，提供行样式、命中测试和可见行计算。", targets: ["31.6"] },
+    { term: "Font", aliases: "字体 字形", desc: "管理字体文件、字形缓存、测量、绘制和换行。", targets: ["30.10", "31.6"] },
+    { term: "BitmapFontFace", aliases: "点阵字体", desc: "预烘焙点阵字库，适合固定字号的快速绘制。", targets: ["31.6"] },
+    { term: "StorageMgr", aliases: "存储管理", desc: "管理内部 Flash、assets、SD 卡和 USB 挂载状态。", targets: ["11", "31.7"] },
+    { term: "VfsBrowser", aliases: "文件浏览", desc: "文件管理的纯数据层，负责目录扫描、排序、路径校验和删除。", targets: ["31.10"] },
+    { term: "FilesApp", aliases: "文件管理", desc: "文件浏览界面，负责列表、弹窗、打开文件和删除确认。", targets: ["13.10", "31.10"] },
+    { term: "SettingsApp", aliases: "设置", desc: "所有设置页面的统一 App，用 SettingsPage 枚举切换子页面。", targets: ["31.10"] },
+    { term: "KeyBindings", aliases: "按键映射", desc: "把物理按键和上下文映射成 SemanticAction。", targets: ["31.10", "31.11"] },
+    { term: "SemanticAction", aliases: "语义动作", desc: "页面层理解的动作，例如 PageNext、Back、Home、VolumeUp。", targets: ["31.3", "31.10"] },
+    { term: "InputContext", aliases: "输入上下文", desc: "区分按键当前是 Reader、List 还是 Global 场景。", targets: ["31.3"] },
+    { term: "PhysicalKey", aliases: "物理键", desc: "拨码的 Up、Mid、Down 三个物理档位。", targets: ["31.3"] },
+    { term: "AutoLock", aliases: "自动锁屏", desc: "根据用户空闲时间决定是否发出锁屏提示。", targets: ["31.10"] },
+    { term: "LockPassword", aliases: "锁屏密码 PIN", desc: "保存 PIN 的 SHA-256 摘要，支持设置、验证和清除。", targets: ["31.10"] },
+    { term: "PowerSave", aliases: "省电", desc: "限制背光并关闭无线功能，支持手动和低电量自动策略。", targets: ["31.10"] },
+    { term: "OTA", aliases: "固件升级 更新", desc: "通过网络下载固件、写入备用分区、校验 MD5 并切换启动分区。", targets: ["15", "31.10"] },
+    { term: "OtaMgr", aliases: "OTA 管理器", desc: "OTA 单例，负责检查更新、下载、校验、上报和取消。", targets: ["31.10"] },
+    { term: "FirmwareInfo", aliases: "固件信息", desc: "描述固件版本、名称、大小、说明、MD5 和发布时间。", targets: ["31.10"] },
+    { term: "MD5", aliases: "校验 摘要", desc: "用于确认下载固件完整的摘要值，不是加密算法。", targets: ["31.10"] },
+    { term: "SHA-256", aliases: "哈希 摘要 PIN", desc: "PIN 保存时使用的密码摘要算法。", targets: ["31.10"] },
+    { term: "Page", aliases: "页面接口", desc: "所有可显示页面共同实现的绘制、输入和 UI 事件接口。", targets: ["31.8"] },
+    { term: "Overlay", aliases: "覆盖层", desc: "画在普通页面之上的临时层，例如键盘和通知。", targets: ["31.8"] },
+    { term: "StatusBar", aliases: "状态栏", desc: "显示时间、电池和状态图标，并订阅 UiBus 的时钟和电池事件。", targets: ["31.8"] },
+    { term: "ControlCenter", aliases: "控制中心", desc: "亮度、音量和常用开关的全局覆盖层。", targets: ["31.8"] },
+    { term: "Toast", aliases: "轻提示", desc: "短时间显示的全局提示层，不修改当前 App 状态。", targets: ["31.8"] },
+    { term: "ConfirmPrompt", aliases: "确认框", desc: "带确认和取消按钮的全局模态提示。", targets: ["31.8"] },
+    { term: "Keyboard", aliases: "软键盘 输入法", desc: "文本输入覆盖层，支持字符、拼音候选和输入回调。", targets: ["31.8", "30.8"] },
+    { term: "Layer", aliases: "绘制层", desc: "描述背景、页面、覆盖层的绘制先后顺序。", targets: ["31.4", "31.6"] },
+    { term: "FrameRequest", aliases: "帧请求", desc: "Router 向 Presenter 提交的待刷新页面、波形和原因。", targets: ["31.4"] },
+    { term: "DisplayPort", aliases: "显示接口", desc: "把应用层刷新意图转换成面板驱动的 Full、Fast 或 Partial 操作。", targets: ["31.4", "31.5"] },
+    { term: "Backlight", aliases: "背光 前光", desc: "通过 LEDC/PWM 控制屏幕照明亮度，不改变墨水屏像素。", targets: ["7", "31.5"] },
+    { term: "Busy", aliases: "BUSY 引脚", desc: "墨水屏控制器忙信号，刷新结束前主控不能继续发下一轮命令。", targets: ["7", "31.5"] },
+    { term: "CS", aliases: "片选", desc: "SPI 片选引脚，低电平时选中当前外设。", targets: ["7"] },
+    { term: "DC", aliases: "命令数据选择", desc: "墨水屏 SPI 引脚，用来区分当前发送的是命令还是数据。", targets: ["7"] },
+    { term: "RST", aliases: "复位", desc: "硬件复位引脚，使外设回到确定初始状态。", targets: ["7", "8"] },
+    { term: "INT", aliases: "中断", desc: "外设通知主控有事件发生的信号，例如触摸有新坐标。", targets: ["8", "31.3"] },
+    { term: "GPIO", aliases: "引脚", desc: "ESP32 的通用输入输出引脚，可复用为 I2C、SPI、ADC、PWM 等。", targets: ["2", "31.11"] },
+    { term: "SDMMC", aliases: "SD 卡接口", desc: "驱动 TF 卡的硬件控制器，可使用 1 线或 4 线模式。", targets: ["11", "31.7"] },
+    { term: "CD", aliases: "卡检测", desc: "SD 卡座检测引脚，用来判断卡是否插入。", targets: ["11", "31.7"] },
+    { term: "FAT", aliases: "FAT 文件系统", desc: "内部 userdata 和 SD 卡常见的文件系统格式。", targets: ["11", "31.7"] },
+    { term: "LittleFS", aliases: "小文件系统", desc: "用于只读 assets 资源分区的轻量文件系统。", targets: ["11", "31.7"] },
+    { term: "USB MSC", aliases: "USB 大容量存储", desc: "把设备内部存储暴露给电脑的能力，当前外接 U 盘 Host 仍未实现。", targets: ["11", "31.7"] },
+    { term: "/int", aliases: "内部存储", desc: "内部 Flash 上的可读写文件系统挂载点。", targets: ["11", "31.10"] },
+    { term: "/sd", aliases: "SD 卡挂载点", desc: "TF 卡挂载目录，存在热插拔和卡拔出风险。", targets: ["11", "31.10"] },
+    { term: "/assets", aliases: "资源分区", desc: "随固件打包的只读资源目录。", targets: ["11", "31.10"] },
+    { term: "Wi-Fi", aliases: "无线网络 STA", desc: "设备连接路由器并访问网络的功能。", targets: ["14.1", "31.10"] },
+    { term: "SSID", aliases: "Wi-Fi 名称", desc: "无线网络名称，长度受到 NVS 和网络协议限制。", targets: ["14.1", "31.10"] },
+    { term: "RSSI", aliases: "信号强度", desc: "Wi-Fi 接收信号强度，通常以负 dBm 表示。", targets: ["14.1", "31.10"] },
+    { term: "AP", aliases: "热点", desc: "设备自己作为 Wi-Fi 接入点，让其他设备连接进来。", targets: ["14.1", "31.10"] },
+    { term: "BLE", aliases: "蓝牙低功耗", desc: "低功耗蓝牙广播和连接能力。", targets: ["14.2", "31.10"] },
+    { term: "GATT", aliases: "蓝牙服务", desc: "BLE 的服务、特征值和读写通知结构。", targets: ["14.2"] },
+    { term: "HTTP", aliases: "网络请求", desc: "基于请求和响应的应用层协议，天气和 OTA 都会使用。", targets: ["14.3", "31.10"] },
+    { term: "HTTPS", aliases: "加密 HTTP", desc: "在 TLS 上加密封装的 HTTP，证书和系统时间都可能影响连接。", targets: ["14.3"] },
+    { term: "NTP", aliases: "网络时间", desc: "通过服务器校准系统时间，必须先用 Wi-Fi 连接网络。", targets: ["14.4", "31.10"] },
+    { term: "WebSocket", aliases: "长连接", desc: "保持双向长连接，适合持续推送消息。", targets: ["14.5"] },
+    { term: "FileServer", aliases: "局域网文件服务", desc: "热点模式下向电脑或手机提供文件访问能力。", targets: ["14.6", "31.10"] },
+    { term: "OTA", aliases: "固件升级", desc: "通过网络下载固件、校验并切换启动分区。", targets: ["15", "31.10"] },
+    { term: "OTA 分区", aliases: "备用固件分区", desc: "用于接收新固件的 Flash 区域，和当前运行分区分开。", targets: ["3", "31.10"] },
+    { term: "Boot Partition", aliases: "启动分区", desc: "下次重启时启动的分区，OTA 校验成功后才会切换。", targets: ["15", "31.10"] },
+    { term: "MD5", aliases: "固件摘要", desc: "确认下载固件内容是否完整的摘要值。", targets: ["31.10"] },
+    { term: "esp_ota_begin", aliases: "OTA 开始写入", desc: "开始向指定 OTA 分区写入新固件。", targets: ["31.10"] },
+    { term: "esp_ota_write", aliases: "OTA 写入", desc: "把下载到的数据块写入 OTA 分区。", targets: ["31.10"] },
+    { term: "esp_ota_end", aliases: "OTA 结束写入", desc: "结束 OTA 写入并让驱动完成收尾。", targets: ["31.10"] },
+    { term: "EventMgr", aliases: "事件管理", desc: "创建事件循环、注册处理器并发送事件。", targets: ["31.9"] },
+    { term: "TaskMgr", aliases: "任务管理", desc: "统一封装延时和任务信息查询。", targets: ["31.9"] },
+    { term: "Mutex", aliases: "互斥锁", desc: "保护跨任务共享数据，防止同时读写。", targets: ["31.9"] },
+    { term: "ISR", aliases: "中断服务程序", desc: "中断中运行的短函数，不能做阻塞、长时间分配或 UI 操作。", targets: ["31.3", "31.9"] },
+    { term: "RAII", aliases: "资源自动释放", desc: "利用析构函数自动释放 JSON、字符串、MD5 和总线资源。", targets: ["31.10"] },
+    { term: "Reader", aliases: "阅读器", desc: "负责打开 TXT、分页、阅读进度和阅读菜单。", targets: ["13.1"] },
+    { term: "Notepad", aliases: "记事本", desc: "负责新建、编辑和保存纯文本笔记。", targets: ["13.2"] },
+    { term: "Gallery", aliases: "相册", desc: "负责图片列表、缩略图和解码显示。", targets: ["13.3"] },
+    { term: "Drawing", aliases: "画板", desc: "负责手绘、画笔状态和位图保存。", targets: ["13.4"] },
+    { term: "WoodenFish", aliases: "木鱼", desc: "电子木鱼应用及其本地音效。", targets: ["13.5", "30.6"] },
+    { term: "Music", aliases: "音乐", desc: "负责音乐库、播放控制、解码和音频输出。", targets: ["13.6", "30.5"] },
+    { term: "Weather", aliases: "天气", desc: "通过 HTTP 获取天气数据并显示城市天气。", targets: ["13.7", "14.3"] },
+    { term: "Clock", aliases: "时钟", desc: "显示时间，并提供闹钟和周期广播。", targets: ["13.8", "31.7"] },
+    { term: "Calendar", aliases: "日历", desc: "按月显示日期并处理月份切换。", targets: ["13.9"] },
+    { term: "Wi-Fi 设置页", aliases: "无线设置", desc: "开关 Wi-Fi、扫描 AP、连接网络和管理已保存网络。", targets: ["31.10"] },
+    { term: "蓝牙设置页", aliases: "BLE 设置", desc: "开关蓝牙、修改广播名称并显示连接数量。", targets: ["31.10"] },
+    { term: "热点设置页", aliases: "AP 设置", desc: "配置热点名称、密码、AP IP 和局域网文件服务。", targets: ["31.10"] },
+    { term: "显示设置页", aliases: "屏幕设置", desc: "设置亮度、夜间模式和自动锁屏。", targets: ["31.10"] },
+    { term: "按键设置页", aliases: "拨码设置", desc: "按上下文修改 Up、Mid、Down 三个物理键的语义动作。", targets: ["31.10"] },
+    { term: "声音设置页", aliases: "音量设置", desc: "设置音量和静音状态。", targets: ["31.10"] },
+    { term: "时间设置页", aliases: "时区设置", desc: "设置时区、自动 NTP 和手动同步。", targets: ["31.10"] },
+    { term: "存储设置页", aliases: "容量信息", desc: "查看内部存储、assets 和 SD 卡容量。", targets: ["31.10"] },
+    { term: "安全设置页", aliases: "PIN 设置", desc: "设置、修改和清除锁屏 PIN。", targets: ["31.10"] },
+    { term: "关于页面", aliases: "设备信息", desc: "显示设备名、固件版本、MAC、IP、SRAM 和 PSRAM。", targets: ["31.10"] }
+  ];
+
+  const functionSearchEntries = [];
+  const headingSearchEntries = [];
+  const documentSearchEntries = [];
+  let searchEntriesBuilt = false;
+  const termStopWords = new Set([
+    "const", "void", "bool", "int", "char", "float", "double", "auto", "static",
+    "return", "if", "else", "for", "while", "switch", "case", "break", "continue",
+    "true", "false", "nullptr", "this", "new", "delete", "struct", "class", "public",
+    "private", "protected", "namespace", "using", "include", "define", "sizeof"
+  ]);
+  let sectionAnchorMap = null;
+
+  function getSectionAnchorMap() {
+    if (!sectionAnchorMap) {
+      sectionAnchorMap = buildSectionAnchorMap();
+    }
+    return sectionAnchorMap;
+  }
+
+  function findNearestHeading(element) {
+    let node = element;
+    while (node && node !== article) {
+      let previous = node.previousElementSibling;
+      while (previous) {
+        if (/^H[1-6]/.test(previous.tagName)) {
+          return previous;
+        }
+        const nested = previous.querySelector("h1, h2, h3, h4, h5, h6");
+        if (nested) {
+          return nested;
+        }
+        previous = previous.previousElementSibling;
+      }
+      node = node.parentElement;
+    }
+    return article.querySelector("h1, h2, h3, h4, h5, h6");
+  }
+
+  function buildDocumentSearchIndex() {
+    const codeElements = Array.from(article.querySelectorAll("code"));
+    let spotIndex = 0;
+
+    codeElements.forEach(function (code) {
+      const text = code.textContent || "";
+      const target = code.closest("pre, p, li, td, th, blockquote") || code;
+      if (!target.id) {
+        spotIndex += 1;
+        target.id = "term-spot-" + spotIndex;
+      }
+
+      const heading = findNearestHeading(target);
+      const headingText = heading ? heading.textContent.trim() : "正文";
+      const snippet = text.replace(/\s+/g, " ").trim().slice(0, 120);
+      const seen = new Set();
+      const pattern = /[A-Za-z_][A-Za-z0-9_]*(?:::[A-Za-z_][A-Za-z0-9_]*)*(?:\s*\([^()]*\))?/g;
+      let match;
+
+      while ((match = pattern.exec(text)) !== null) {
+        const term = match[0].replace(/\s+/g, "");
+        const lower = term.toLowerCase();
+        if (term.length < 2 || termStopWords.has(lower) || seen.has(term)) {
+          continue;
+        }
+        seen.add(term);
+        documentSearchEntries.push({
+          term: term,
+          aliases: headingText + " " + snippet,
+          desc: "出现在：" + headingText + (snippet ? "。代码上下文：" + snippet : "。"),
+          targetId: target.id,
+          rank: 3
+        });
+      }
+    });
+  }
+
+  function buildFunctionSearchEntries() {
+    if (searchEntriesBuilt) {
+      return;
+    }
+
+    Array.from(article.querySelectorAll("h2[id], h3[id], h4[id], h5[id], h6[id]")).forEach(function (heading) {
+      headingSearchEntries.push({
+        term: heading.textContent.trim(),
+        aliases: "章节 小节",
+        desc: "查看这个章节或小节的解释。",
+        targetId: heading.id,
+        rank: 2
+      });
+
+      const matches = heading.textContent.match(/(?:[A-Za-z_][A-Za-z0-9_]*::)*[A-Za-z_][A-Za-z0-9_]*\s*\([^()]*\)/g);
+      if (!matches) {
+        return;
+      }
+      const seen = new Set();
+      matches.forEach(function (match) {
+        const name = match.replace(/\s+/g, "");
+        if (seen.has(name)) {
+          return;
+        }
+        seen.add(name);
+        functionSearchEntries.push({
+          term: name,
+          aliases: heading.textContent.trim(),
+          desc: "函数解释：" + heading.textContent.trim(),
+          targetId: heading.id,
+          rank: 1
+        });
+      });
+    });
+    buildDocumentSearchIndex();
+    searchEntriesBuilt = true;
+  }
+
+  function activateTermEntry(entry, trigger) {
+    const targetIds = [];
+    if (entry.targetId) {
+      targetIds.push(entry.targetId);
+    }
+    (entry.targets || []).forEach(function (number) {
+      const id = getSectionAnchorMap().get(number);
+      if (id && targetIds.indexOf(id) < 0) {
+        targetIds.push(id);
+      }
+    });
+
+    if (!targetIds.length) {
+      return;
+    }
+
+    pushJumpLocation();
+    if (targetIds.length === 1) {
+      window.location.hash = targetIds[0];
+      const targetLink = linkById.get(targetIds[0]);
+      if (targetLink) {
+        setActive(targetLink);
+      }
+    } else {
+      openFunctionChooser(targetIds, trigger);
+    }
+
+    if (window.matchMedia("(max-width: 900px)").matches) {
+      sidebar.classList.remove("open");
+    }
+  }
+
+  function renderTermResults() {
+    const query = termSearch.value.trim().toLowerCase();
+    buildFunctionSearchEntries();
+    const allEntries = glossaryTerms.concat(functionSearchEntries, headingSearchEntries, documentSearchEntries);
+    const uniqueEntries = new Map();
+    allEntries.forEach(function (entry) {
+      const key = entry.term.toLowerCase() + "|" + (entry.targetId || (entry.targets || []).join(","));
+      const previous = uniqueEntries.get(key);
+      if (!previous || (entry.rank || 0) < (previous.rank || 0)) {
+        uniqueEntries.set(key, entry);
+      }
+    });
+    const entries = Array.from(uniqueEntries.values());
+    let results;
+
+    if (!query) {
+      termResults.textContent = "";
+      return;
+    } else {
+      results = entries.filter(function (entry) {
+        const haystack = (entry.term + " " + (entry.aliases || "") + " " + entry.desc).toLowerCase();
+        return haystack.includes(query);
+      }).sort(function (a, b) {
+        const aStarts = a.term.toLowerCase().startsWith(query) ? 0 : 1;
+        const bStarts = b.term.toLowerCase().startsWith(query) ? 0 : 1;
+        return aStarts - bStarts || (a.rank || 0) - (b.rank || 0) || a.term.localeCompare(b.term, "zh-CN");
+      }).slice(0, 40);
+    }
+
+    termResults.textContent = "";
+    if (!results.length) {
+      const empty = document.createElement("div");
+      empty.className = "term-empty";
+      empty.textContent = "没有找到匹配的术语或函数。";
+      termResults.appendChild(empty);
+      return;
+    }
+
+    results.forEach(function (entry) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "term-result";
+
+      const title = document.createElement("strong");
+      title.textContent = entry.term;
+      button.appendChild(title);
+
+      const desc = document.createElement("span");
+      desc.textContent = entry.desc;
+      button.appendChild(desc);
+
+      button.addEventListener("click", function () {
+        activateTermEntry(entry, button);
+      });
+      termResults.appendChild(button);
+    });
+  }
+
+  links.forEach(function (link) {
+    const id = decodeURIComponent(link.getAttribute("href").slice(1));
+    const heading = document.getElementById(id);
+    if (heading) {
+      linkById.set(id, link);
+    }
+  });
+
+  function escapeRegExp(text) {
+    return text.replace(/[\\^.*+?()[\]{}|]/g, function (match) {
+      return "\\" + match;
+    });
+  }
+
+  function buildFunctionIndex() {
+    const headings = Array.from(article.querySelectorAll("h2[id], h3[id], h4[id], h5[id], h6[id]"));
+    const candidates = new Map();
+
+    headings.forEach(function (heading) {
+      const rawHeading = heading.textContent.trim();
+      const matches = rawHeading.match(/(?:[A-Za-z_][A-Za-z0-9_]*::)*[A-Za-z_][A-Za-z0-9_]*\s*\([^()]*\)/g);
+      if (!matches) {
+        return;
+      }
+
+      matches.forEach(function (match, matchIndex) {
+        const fullName = match.replace(/\s+/g, "");
+        const isPrimary = matchIndex === 0 && rawHeading.indexOf(match) === rawHeading.search(/[A-Za-z_]/);
+        if (!fullName.includes("::") && !isPrimary) {
+          return;
+        }
+        if (!candidates.has(fullName)) {
+          candidates.set(fullName, []);
+        }
+        candidates.get(fullName).push({ id: heading.id, weight: 3, heading: rawHeading });
+
+        if (fullName.includes("::")) {
+          const openParen = fullName.indexOf("(");
+          const baseName = openParen >= 0 ? fullName.slice(0, openParen) : fullName;
+          const bareName = baseName.split("::").pop();
+          const bareCall = bareName + "()";
+          if (!candidates.has(bareCall)) {
+            candidates.set(bareCall, []);
+          }
+          candidates.get(bareCall).push({ id: heading.id, weight: 2, heading: rawHeading });
+        }
+      });
+    });
+
+    const aliases = [];
+    const aliasTargets = new Map();
+    candidates.forEach(function (targets, alias) {
+      const unique = new Map();
+      targets.forEach(function (target) {
+        const previous = unique.get(target.id);
+        if (!previous || target.weight > previous.weight) {
+          unique.set(target.id, target);
+        }
+      });
+      const list = Array.from(unique.values());
+      if (list.length > 0) {
+        list.sort(function (a, b) {
+          return b.weight - a.weight || a.heading.localeCompare(b.heading, "zh-CN");
+        });
+        aliases.push(alias);
+        aliasTargets.set(alias, list);
+      }
+    });
+
+    aliases.sort(function (a, b) {
+      return b.length - a.length;
+    });
+
+    return { aliases: aliases, targets: aliasTargets };
+  }
+
+  function linkifyTextNode(node, index) {
+    const text = node.nodeValue;
+    if (!text || !text.trim() || !index.aliases.length) {
+      return;
+    }
+
+    const pattern = new RegExp("(" + index.aliases.map(escapeRegExp).join("|") + ")", "g");
+    let match;
+    let lastIndex = 0;
+    const fragment = document.createDocumentFragment();
+    let changed = false;
+
+    while ((match = pattern.exec(text)) !== null) {
+      const start = match.index;
+      const end = start + match[0].length;
+      const before = start > 0 ? text[start - 1] : "";
+      const after = end < text.length ? text[end] : "";
+      const blocked = /[A-Za-z0-9_:]/.test(before) || /[A-Za-z0-9_:]/.test(after);
+
+      if (blocked) {
+        continue;
+      }
+
+      const targets = index.targets.get(match[0]);
+      if (!targets || !targets.length) {
+        continue;
+      }
+
+      fragment.appendChild(document.createTextNode(text.slice(lastIndex, start)));
+      const link = document.createElement("a");
+      link.className = "fn-ref";
+      link.textContent = match[0];
+      if (targets.length === 1) {
+        link.href = "#" + targets[0].id;
+        link.title = "跳转到 " + targets[0].heading;
+        link.setAttribute("data-fn-target", targets[0].id);
+      } else {
+        link.href = "#";
+        link.className += " fn-ref-choice";
+        link.title = "有多个同名函数，点击选择";
+        link.setAttribute("data-fn-targets", targets.map(function (target) {
+          return target.id;
+        }).join("|"));
+      }
+      fragment.appendChild(link);
+      lastIndex = end;
+      changed = true;
+    }
+
+    if (!changed) {
+      return;
+    }
+
+    fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+    node.parentNode.replaceChild(fragment, node);
+  }
+
+  function buildSectionAnchorMap() {
+    const sectionAnchors = new Map();
+    Array.from(article.querySelectorAll("h2[id], h3[id], h4[id], h5[id], h6[id]")).forEach(function (heading) {
+      const match = heading.textContent.trim().match(/^(\d+(?:\.\d+)?)/);
+      if (match && !sectionAnchors.has(match[1])) {
+        sectionAnchors.set(match[1], heading.id);
+      }
+    });
+    return sectionAnchors;
+  }
+
+  function linkifyMarkers() {
+    if (!article) {
+      return;
+    }
+
+    const sectionAnchors = buildSectionAnchorMap();
+
+    const markerPattern = /\[跳到\s+([^\]]+)\]|\[返回点\]/g;
+
+    function replaceMarkerTextNode(node) {
+      const text = node.nodeValue;
+      if (!text || (!text.includes("[跳到") && !text.includes("[返回点]"))) {
+        return;
+      }
+
+      let match;
+      let lastIndex = 0;
+      let changed = false;
+      const fragment = document.createDocumentFragment();
+
+      while ((match = markerPattern.exec(text)) !== null) {
+        const markerText = match[0];
+        const jumpText = match[1];
+        let replacement = null;
+
+        if (jumpText) {
+          const numbers = jumpText.match(/\d+(?:\.\d+)?/g) || [];
+          const targetIds = [];
+          numbers.forEach(function (number) {
+            const id = sectionAnchors.get(number);
+            if (id && targetIds.indexOf(id) < 0) {
+              targetIds.push(id);
+            }
+          });
+
+          if (targetIds.length > 0) {
+            replacement = document.createElement("a");
+            replacement.className = "jump-ref";
+            replacement.textContent = markerText;
+            if (targetIds.length === 1) {
+              replacement.href = "#" + targetIds[0];
+              replacement.title = "跳转到 " + jumpText;
+              replacement.setAttribute("data-section-target", targetIds[0]);
+            } else {
+              replacement.href = "#";
+              replacement.className += " jump-ref-choice";
+              replacement.title = "有多个跳转目标，点击选择";
+              replacement.setAttribute("data-section-targets", targetIds.join("|"));
+            }
+          }
+        } else {
+          replacement = document.createElement("button");
+          replacement.type = "button";
+          replacement.className = "return-ref";
+          replacement.textContent = "[返回点]";
+          replacement.title = "返回上一个跳转位置";
+        }
+
+        if (!replacement) {
+          continue;
+        }
+
+        fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+        fragment.appendChild(replacement);
+        lastIndex = match.index + markerText.length;
+        changed = true;
+      }
+
+      if (!changed) {
+        return;
+      }
+
+      fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+      node.parentNode.replaceChild(fragment, node);
+    }
+
+    const markerWalker = document.createTreeWalker(article, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        if (!node.nodeValue || (!node.nodeValue.includes("[跳到") && !node.nodeValue.includes("[返回点]"))) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        if (!node.parentElement || node.parentElement.closest("a, button, script, style")) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+
+    const markerNodes = [];
+    while (markerWalker.nextNode()) {
+      markerNodes.push(markerWalker.currentNode);
+    }
+    markerNodes.forEach(replaceMarkerTextNode);
+  }
+
+  function linkifyFunctionReferences() {
+    if (!article) {
+      return;
+    }
+
+    const index = buildFunctionIndex();
+    const walker = document.createTreeWalker(article, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        if (!node.nodeValue || !node.nodeValue.trim()) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        const parent = node.parentElement;
+        if (!parent || parent.closest("a, h1, h2, h3, h4, h5, h6, script, style")) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+
+    const nodes = [];
+    while (walker.nextNode()) {
+      nodes.push(walker.currentNode);
+    }
+
+    nodes.forEach(function (node) {
+      linkifyTextNode(node, index);
+    });
+
+    const count = article.querySelectorAll("a.fn-ref").length;
+    functionHint.textContent = "已建立 " + count + " 处函数跳转，点击正文中的绿色函数名即可。";
+  }
+
+  function showJumpStatus() {
+    jumpStatus.hidden = jumpStack.length === 0;
+  }
+
+  function pushJumpLocation() {
+    jumpStack.push({
+      scrollY: window.scrollY,
+      hash: window.location.hash
+    });
+    showJumpStatus();
+  }
+
+  function closeFunctionChooser() {
+    fnChooser.hidden = true;
+    fnChooserList.textContent = "";
+  }
+
+  function openFunctionChooser(targetIds, sourceLink) {
+    fnChooserList.textContent = "";
+    targetIds.forEach(function (targetId) {
+      const heading = document.getElementById(targetId);
+      if (!heading) {
+        return;
+      }
+
+      const choice = document.createElement("button");
+      choice.type = "button";
+      choice.className = "fn-choice-item";
+      choice.textContent = heading.textContent.trim();
+      choice.addEventListener("click", function () {
+        closeFunctionChooser();
+        window.location.hash = targetId;
+        const targetLink = linkById.get(targetId);
+        if (targetLink) {
+          setActive(targetLink);
+        }
+      });
+      fnChooserList.appendChild(choice);
+    });
+
+    if (!fnChooserList.children.length) {
+      return;
+    }
+
+    fnChooser.hidden = false;
+    const firstChoice = fnChooserList.querySelector("button");
+    if (firstChoice) {
+      firstChoice.focus();
+    }
+  }
+
+  const headings = Array.from(document.querySelectorAll("article h1[id], article h2[id], article h3[id], article h4[id], article h5[id], article h6[id]"));
+  let activeLink = null;
+
+  function setActive(link) {
+    if (activeLink === link) {
+      return;
+    }
+    if (activeLink) {
+      activeLink.classList.remove("active");
+    }
+    activeLink = link || null;
+    if (activeLink) {
+      activeLink.classList.add("active");
+      const rect = activeLink.getBoundingClientRect();
+      if (rect.top < 0 || rect.bottom > window.innerHeight) {
+        activeLink.scrollIntoView({ block: "center" });
+      }
+    }
+  }
+
+  function updateActive() {
+    let current = null;
+    for (const heading of headings) {
+      if (heading.getBoundingClientRect().top <= 130) {
+        current = heading;
+      } else {
+        break;
+      }
+    }
+    setActive(current ? linkById.get(current.id) : null);
+  }
+
+  let ticking = false;
+  window.addEventListener("scroll", function () {
+    if (ticking) {
+      return;
+    }
+    ticking = true;
+    window.requestAnimationFrame(function () {
+      updateActive();
+      ticking = false;
+    });
+  }, { passive: true });
+
+  links.forEach(function (link) {
+    link.addEventListener("click", function () {
+      setActive(link);
+      if (window.matchMedia("(max-width: 900px)").matches) {
+        sidebar.classList.remove("open");
+      }
+    });
+  });
+
+  article.addEventListener("click", function (event) {
+    const returnRef = event.target.closest("button.return-ref");
+    if (returnRef) {
+      event.preventDefault();
+      returnToPreviousLocation();
+      return;
+    }
+
+    const sectionLink = event.target.closest("a.jump-ref");
+    if (sectionLink) {
+      pushJumpLocation();
+      const multiTargets = sectionLink.getAttribute("data-section-targets");
+      if (multiTargets) {
+        event.preventDefault();
+        openFunctionChooser(multiTargets.split("|").filter(Boolean), sectionLink);
+        return;
+      }
+
+      const targetId = sectionLink.getAttribute("data-section-target");
+      const targetLink = linkById.get(targetId);
+      if (targetLink) {
+        setActive(targetLink);
+      }
+      return;
+    }
+
+    const functionLink = event.target.closest("a.fn-ref");
+    if (!functionLink) {
+      return;
+    }
+
+    pushJumpLocation();
+    const multiTargets = functionLink.getAttribute("data-fn-targets");
+    if (multiTargets) {
+      event.preventDefault();
+      openFunctionChooser(multiTargets.split("|").filter(Boolean), functionLink);
+      return;
+    }
+
+    const targetId = functionLink.getAttribute("data-fn-target");
+    const targetLink = linkById.get(targetId);
+    if (targetLink) {
+      setActive(targetLink);
+    }
+  });
+
+  function returnToPreviousLocation() {
+    const previous = jumpStack.pop();
+    if (!previous) {
+      showJumpStatus();
+      return;
+    }
+    window.scrollTo({ top: previous.scrollY, behavior: "smooth" });
+    if (previous.hash) {
+      history.replaceState(null, "", previous.hash);
+    }
+    showJumpStatus();
+  }
+
+  fnBackButton.addEventListener("click", returnToPreviousLocation);
+
+  fnChooserClose.addEventListener("click", closeFunctionChooser);
+
+  fnChooser.addEventListener("click", function (event) {
+    if (event.target === fnChooser) {
+      closeFunctionChooser();
+    }
+  });
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && !fnChooser.hidden) {
+      closeFunctionChooser();
+    }
+  });
+
+  toggle.addEventListener("click", function () {
+    sidebar.classList.toggle("open");
+  });
+
+  search.addEventListener("input", function () {
+    const query = search.value.trim().toLowerCase();
+    const items = Array.from(document.querySelectorAll("#TOC li"));
+    items.forEach(function (item) {
+      const ownLink = item.querySelector(":scope > a");
+      const ownText = ownLink ? ownLink.textContent.toLowerCase() : "";
+      const childMatch = Array.from(item.querySelectorAll(":scope li > a")).some(function (link) {
+        return link.textContent.toLowerCase().includes(query);
+      });
+      item.hidden = Boolean(query) && !ownText.includes(query) && !childMatch;
+    });
+  });
+
+  termSearch.addEventListener("input", renderTermResults);
+
+  insertSourceManifests();
+  linkifyMarkers();
+  linkifyFunctionReferences();
+  const initialTermQuery = new URLSearchParams(window.location.search).get("q");
+  if (initialTermQuery) {
+    termSearch.value = initialTermQuery;
+  }
+  renderTermResults();
+  updateActive();
+}());
+</script>
+</body>
+</html>

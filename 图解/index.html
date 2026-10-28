@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ESP32-S3 墨水屏电子书 · 流程图解</title>
+<style>
+  :root {
+    --ink: #1b2430;
+    --muted: #5c6b7a;
+    --teal: #0f766e;
+    --orange: #b44a1e;
+    --line: #d7e0e8;
+    --bg: #f6f8fb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  header.hero {
+    background: #101a26;
+    color: #fff;
+    padding: 56px 24px 46px;
+    border-left: 8px solid var(--teal);
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; }
+  .kicker {
+    font-family: Consolas, ui-monospace, monospace;
+    letter-spacing: .12em;
+    font-size: 12px;
+    color: #8fd8cb;
+    margin-bottom: 14px;
+  }
+  h1 { font-size: 34px; margin: 0 0 10px; letter-spacing: .5px; }
+  .hero p { margin: 6px 0; color: #c3cfda; font-size: 15px; }
+  .hero .stats { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 26px; }
+  .hero .stat {
+    background: #1c2836; border: 1px solid #2c3b4c; border-radius: 10px;
+    padding: 12px 18px; min-width: 170px;
+  }
+  .hero .stat b { display: block; font-size: 20px; color: #fff; }
+  .hero .stat span { font-size: 12px; color: #8c9cad; }
+
+  main { padding: 36px 24px 80px; }
+  nav.toc {
+    background: #fff; border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 22px; margin-bottom: 34px;
+  }
+  nav.toc b { font-size: 13px; color: var(--teal); letter-spacing: .08em; }
+  nav.toc ol { margin: 10px 0 0; padding-left: 22px; columns: 2; column-gap: 36px; }
+  nav.toc a { color: var(--ink); text-decoration: none; border-bottom: 1px dashed var(--line); }
+  nav.toc a:hover { color: var(--teal); border-color: var(--teal); }
+
+  section { margin-bottom: 46px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .sec-no {
+    font-family: Consolas, monospace; font-size: 12px; color: var(--orange);
+    font-weight: 700; letter-spacing: .06em;
+  }
+  h2 { font-size: 23px; margin: 0 0 6px; }
+  .lead { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
+  figure { margin: 0; }
+  figure img {
+    width: 100%; height: auto; display: block;
+    border: 1px solid var(--line); border-radius: 12px; background: #fff;
+  }
+  figcaption { font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+  .note {
+    border-left: 4px solid var(--teal); background: #fff;
+    border-radius: 0 10px 10px 0; padding: 12px 18px; margin: 16px 0 0;
+    font-size: 14px;
+  }
+  .note b { color: var(--teal); }
+  .tip {
+    border-left-color: var(--orange);
+  }
+  .tip b { color: var(--orange); }
+  code {
+    font-family: Consolas, ui-monospace, monospace; font-size: 13px;
+    background: #eef2f6; padding: 1px 5px; border-radius: 4px;
+  }
+  footer {
+    border-top: 1px solid var(--line); padding-top: 18px;
+    color: var(--muted); font-size: 12.5px;
+  }
+  @media (max-width: 720px) {
+    nav.toc ol { columns: 1; }
+    h1 { font-size: 26px; }
+  }
+  @media print {
+    body { background: #fff; }
+    header.hero { background: #fff; color: #000; border-left-color: #0f766e; }
+    .hero p, .hero .stat span { color: #333; }
+    .hero .stat { background: #fff; }
+    section { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">ESP32-S3 E-INK EBOOK &nbsp;/&nbsp; DIAGRAM BOOK</div>
+    <h1>墨水屏电子书 · 流程图解</h1>
+    <p>从硬件到整机、从一次点击到一帧上屏，一套图看懂这个项目的结构与工作链路。</p>
+    <p>先看「项目怎么一步步做出来」，再看「做出来之后内部怎么跑」。</p>
+    <div class="stats">
+      <div class="stat"><b>240 MHz</b><span>ESP32-S3 · 8MB PSRAM</span></div>
+      <div class="stat"><b>176 × 264</b><span>墨水屏 · 1-bit · 5,808 B/帧</span></div>
+      <div class="stat"><b>12 项</b><span>内置应用（11 可用 + 1 占位）</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <nav class="toc">
+    <b>目录</b>
+    <ol>
+      <li><a href="#build">从零到整机：开发顺序（主线）</a></li>
+      <li><a href="#overview">项目全景：五层结构</a></li>
+      <li><a href="#hardware">硬件连接：谁挂在哪个总线上</a></li>
+      <li><a href="#boot">启动链路：9 步初始化</a></li>
+      <li><a href="#render">一帧画面怎么上屏</a></li>
+      <li><a href="#input">一次点击的完整时序</a></li>
+      <li><a href="#refresh">墨水屏刷新策略</a></li>
+      <li><a href="#tasks">任务与并发模型</a></li>
+      <li><a href="#chains">三条典型业务链路</a></li>
+      <li><a href="#storage">Flash 分区与挂载点</a></li>
+      <li><a href="#features">功能地图：12 个应用</a></li>
+    </ol>
+  </nav>
+
+  <section id="build">
+    <div class="sec-head"><span class="sec-no">01</span><h2>从零到整机：这个项目的开发顺序</h2></div>
+    <p class="lead">先做硬件、再点亮外设、然后搭显示与 UI 框架、接着一个个长应用，最后联网与打包 —— 每一步都有可以单独验证的“做完标准”。</p>
+    <figure>
+      <img src="11-开发顺序.png" alt="从零到整机的开发顺序">
+      <figcaption>图 1　八个阶段 25 步：做什么 → 代码落在哪个目录 → 怎么算做完</figcaption>
+    </figure>
+
+    <div class="note">
+      <b>为什么是这个顺序？</b>因为每一层都要“能验证”才值得往上走：
+      硬件不通就写驱动，是在猜；驱动没跑通就写 UI，是在赌；
+      UI 框架没稳就写 12 个 App，会同时踩 12 个坑。反过来，每层都留一个自测程序，
+      出问题时你能立刻判断是硬件、驱动还是上层逻辑。
+    </div>
+
+    <div class="note tip">
+      <b>给面试用的讲法：</b>“我不是一次写完的，是按 硬件 → 驱动 → 显示 → 框架 → 应用 → 系统能力 → 发布
+      七层往上叠的。每叠一层都留下能验证的东西：<code>test_gdey027t91</code>、<code>test_storage</code>、
+      以及后来的四个壳页面。最后 <code>boot()</code> 把各层初始化按顺序串起来，就是整机。”
+    </div>
+  </section>
+
+  <section id="overview">
+    <div class="sec-head"><span class="sec-no">02</span><h2>项目全景：五层结构，一层只干一类事</h2></div>
+    <p class="lead">应用层只写业务，框架层管路由与上屏，平台层管数据/网络/存储，驱动层碰寄存器，最下面是 ESP-IDF 与硬件。</p>
+    <figure>
+      <img src="01-项目全景.png" alt="五层架构">
+      <figcaption>图 2　依赖是单向的：上层调下层；反向只走一条通路 —— 事件（UiBus）</figcaption>
+    </figure>
+    <div class="note">
+      <b>记住一句话：</b>越界就是 bug 的温床。App 里不允许出现 <code>spi_transmit()</code>，
+      驱动里不允许出现 <code>Router</code>。
+    </div>
+  </section>
+
+  <section id="hardware">
+    <div class="sec-head"><span class="sec-no">03</span><h2>硬件连接：谁挂在哪个总线上</h2></div>
+    <p class="lead">一块主控 + 7 个外设：SPI 屏、I2C 触摸与六轴、I2S 音频、SDMMC 卡、ADC 拨码与电池、USB 传文件。</p>
+    <figure>
+      <img src="02-硬件连接.png" alt="硬件连接图">
+      <figcaption>图 3　顺着总线讲硬件，比背型号更好记</figcaption>
+    </figure>
+    <div class="note">
+      <b>常被问：</b>为什么屏幕用 SPI、触摸用 I2C？—— 屏幕一次要写几 KB 显存，SPI 够快且简单；
+      触摸每次只读几个字节，I2C 省引脚。
+    </div>
+  </section>
+
+  <section id="boot">
+    <div class="sec-head"><span class="sec-no">04</span><h2>启动链路：9 步有序初始化</h2></div>
+    <p class="lead"><code>boot()</code> 是一张步骤表，每步带 <code>required</code> 标记：关键步骤失败终止，其余降级继续。</p>
+    <figure>
+      <img src="03-启动链路.png" alt="启动链路">
+      <figcaption>图 4　显示 / 触摸 / 任务三步是硬要求，音频、拨码、NTP 坏了也能开机</figcaption>
+    </figure>
+    <div class="note">
+      <b>顺序不是随便排的：</b>显示要先于 UI 合成；触摸要先于 InputRouter；
+      存储挂载要先于读取阅读进度。启动完成后，<code>main</code> 任务只剩每 5 秒一次 delay。
+    </div>
+  </section>
+
+  <section id="render">
+    <div class="sec-head"><span class="sec-no">05</span><h2>一帧画面怎么上屏（核心）</h2></div>
+    <p class="lead">四个角色分工：UI 线程合成、Router 决定波形、Presenter 搬帧 + 刷屏、DisplayPort 翻译成驱动动作。</p>
+    <figure>
+      <img src="04-上屏管线.png" alt="上屏管线">
+      <figcaption>图 5　合成在 UI 线程，拷贝与等待 BUSY 在 Presenter 线程</figcaption>
+    </figure>
+    <div class="note">
+      <b>四个设计点：</b>双 framebuffer 防撕裂 · 队列合并只刷最新 · idle 事件组防堆积 ·
+      局刷失败自动回退 bootstrap。
+    </div>
+  </section>
+
+  <section id="input">
+    <div class="sec-head"><span class="sec-no">06</span><h2>一次点击的完整时序</h2></div>
+    <p class="lead">手指 → 触摸 IC → InputRouter 任务 → UiBus → UiLoop → App/Router → Presenter → 屏幕，一共 8 跳。</p>
+    <figure>
+      <img src="05-点击时序.png" alt="点击时序图">
+      <figcaption>图 6　触摸任务只生产事件，UI 状态只在 UI 线程改</figcaption>
+    </figure>
+  </section>
+
+  <section id="refresh">
+    <div class="sec-head"><span class="sec-no">07</span><h2>墨水屏刷新策略：把页面变化翻译成波形</h2></div>
+    <p class="lead">全刷慢但干净、局刷快但留残影。框架用 <code>refresh_edges.cc</code> 一张边表统一决策。</p>
+    <figure>
+      <img src="06-刷新策略.png" alt="刷新策略">
+      <figcaption>图 7　新增页面只补一行边表，不在每个 App 里各写判断</figcaption>
+    </figure>
+    <div class="note tip">
+      <b>诚实讲现状：</b>目前 Composer 是整屏合成，所谓局刷 = 整屏提交 + Partial 波形；
+      驱动已支持 8 像素对齐窗口，下一步才是真正的脏矩形局刷。
+    </div>
+  </section>
+
+  <section id="tasks">
+    <div class="sec-head"><span class="sec-no">08</span><h2>任务与并发模型</h2></div>
+    <p class="lead">7 类任务 + 2 个队列 + 1 条纪律：只有 UI 线程能改 UI，其他任务只发事件。</p>
+    <figure>
+      <img src="07-任务并发.png" alt="任务与并发">
+      <figcaption>图 8　UiBus（32）负责事件，Presenter 队列（4）负责上屏请求</figcaption>
+    </figure>
+  </section>
+
+  <section id="chains">
+    <div class="sec-head"><span class="sec-no">09</span><h2>三条典型业务链路</h2></div>
+    <p class="lead">阅读、音乐、天气 —— 三条链路刚好覆盖“本地文件 / 解码 / 网络”三种慢活。</p>
+    <figure>
+      <img src="08-业务链路.png" alt="业务链路">
+      <figcaption>图 9　共同点：扫描固定目录 → 后台做慢活 → 结果 post 回 UI → 一次重绘</figcaption>
+    </figure>
+  </section>
+
+  <section id="storage">
+    <div class="sec-head"><span class="sec-no">10</span><h2>Flash 分区与挂载点</h2></div>
+    <p class="lead">16MB 切 8 块：双 OTA、只读 assets、可写 userdata，再加一张可热插拔的 TF 卡。</p>
+    <figure>
+      <img src="09-存储分区.png" alt="存储分区">
+      <figcaption>图 10　/int 可写、/assets 只读、/sd 外置；用户内容只扫固定子目录</figcaption>
+    </figure>
+  </section>
+
+  <section id="features">
+    <div class="sec-head"><span class="sec-no">11</span><h2>功能地图：12 个应用</h2></div>
+    <p class="lead">11 个可用 + 1 个占位，按“内容 / 工具 / 系统”三类记最快。</p>
+    <figure>
+      <img src="10-功能地图.png" alt="功能地图">
+      <figcaption>图 11　边界也要讲清楚：OTA 完整流程与 EPUB 仍未实现</figcaption>
+    </figure>
+  </section>
+
+  <footer>
+    <p>图片由 <code>tools/build_diagrams.py</code> 生成（Pillow 绘制，2 倍分辨率），
+       需要改文案或配色时直接改脚本后重新运行即可。</p>
+    <p>同内容的 Mermaid 版本见 <code>docs/项目架构与工作链路-图解.md</code>，可在 GitHub / VSCode 直接渲染。</p>
+  </footer>
+</main>
+</body>
+</html>

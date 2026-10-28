@@ -1,0 +1,52 @@
+{
+    "MicroPython.executeButton": [
+        {
+            "text": "▶",
+            "tooltip": "运行",
+            "alignment": "left",
+            "command": "extension.executeFile",
+            "priority": 3.5
+        }
+    ],
+    "MicroPython.syncButton": [
+        {
+            "text": "$(sync)",
+            "tooltip": "同步",
+            "alignment": "left",
+            "command": "extension.execute",
+            "priority": 4
+        }
+    ],
+    "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
+    "C_Cpp.default.intelliSenseMode": "gcc-x64",
+    "C_Cpp.default.browse.path": [
+        "${workspaceFolder}"
+    ],
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/**"
+    ],
+    "C_Cpp.default.defines": [
+        "ESP_PLATFORM",
+        "CONFIG_IDF_TARGET_ESP32S3"
+    ],
+    "files.associations": {
+        "*.cc": "cpp",
+        "*.hpp": "cpp",
+        "*.h": "c",
+        "*.c": "c"
+    },
+    "idf.saveBeforeBuild": true,
+    "idf.enableIdfComponentManager": true,
+    "idf.showOnboardingOnInit": false,
+    "idf.currentSetup": "E:\\esp\\v6.1\\esp-idf",
+    "idf.eimIdfJsonPath": "C:\\Espressif\\tools\\eim_idf.json",
+    "idf.customExtraVars": {
+        "IDF_TARGET": "esp32s3"
+    },
+    "clangd.path": "E:\\Espressif\\tools\\esp-clangd\\esp-21.1.3_20260408\\esp-clangd\\bin\\clangd.exe",
+    "clangd.arguments": [
+      "--background-index",
+      "--query-driver=**",
+      "--compile-commands-dir=e:\\game\\Chat_program1\\Ebook-main\\build"
+    ]
+}

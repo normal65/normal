@@ -1,0 +1,18 @@
+# ESP-IDF Partition Table (16MB Flash)
+# Name,   Type, SubType, Offset,  Size, Flags
+# NVS (Non-Volatile Storage) - 非易失性存储分区,用于存储 WiFi 配置、设备参数等持久化数据
+nvs,      data, nvs,     0x9000,    0x4000,
+# OTA Data - OTA 更新数据分区,存储当前激活的应用分区信息(ota_0 或 ota_1)
+otadata,  data, ota,     0xd000,    0x2000,
+# PHY Init - WiFi/BLE 物理层初始化数据分区,存储 RF 校准参数
+phy_init, data, phy,     0xf000,    0x1000,
+# OTA Partition 0 - 应用程序分区 0,用于存储固件(约 2.94MB，2026-07 从 userdata 借 2MB 扩容而来)
+ota_0,    app,  ota_0,   0x20000,   0x2F0000,
+# OTA Partition 1 - 应用程序分区 1,用于 OTA 更新时存储新固件(约 2.94MB，与 ota_0 同大小)
+ota_1,    app,  ota_1,   ,          0x2F0000,
+# Assets - 内置 LittleFS 系统资源(4MB)，只读挂载为 /assets（偏移随 ota_1 扩容后移到 0x600000）
+assets,   data, littlefs, 0x600000,   4M
+# Userdata - 内部用户数据(FAT + Wear Levelling)；8M -> 6M 为 app 分区让出 2MB，
+# 系统自身数据(笔记/涂鸦/设置)仅占用百 KB 级，大容量书籍/音乐/照片建议放 TF 卡 /sd
+userdata, data, fat, ,                6M
+
